@@ -5,8 +5,7 @@
   "type": "module",
   "scripts": {
     "test": "node --test test/*.test.js",
-    "e2e": "node scripts/e2e.js",
-    "package": "node scripts/package.js"
+    "e2e": "node scripts/e2e.js"
   },
   "devDependencies": {
     "puppeteer": "^25.13.0"

@@ -1,6 +1,6 @@
 # TypeWhisper Browser Extension
 
-Dictate into any text field in Chrome or Firefox with [TypeWhisper](https://typewhisper.com), and let website workflows match the page you are on. The extension talks only to TypeWhisper's local API on `127.0.0.1`.
+Dictate into any text field in Chrome or Firefox with [TypeWhisper](https://www.typewhisper.com), and let website workflows match the page you are on. The extension talks only to TypeWhisper's local API on `127.0.0.1`.
 
 ## Features
 

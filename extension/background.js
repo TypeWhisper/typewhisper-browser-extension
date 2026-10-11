@@ -17,9 +17,6 @@ const RECORDING_POLL_LIMIT = 30 * 60;
 
 // MARK: - Setup
 
-// Content scripts read the recording state to draw the microphone button.
-void chrome.storage.session.setAccessLevel({ accessLevel: "TRUSTED_AND_UNTRUSTED_CONTEXTS" });
-
 chrome.runtime.onInstalled.addListener(() => {
   void setUp();
 });
@@ -29,6 +26,8 @@ chrome.runtime.onStartup.addListener(() => {
 });
 
 async function setUp() {
+  // A dictation cannot outlive the browser session that started it.
+  await chrome.storage.local.set({ recording: false });
   chrome.contextMenus.removeAll(() => {
     chrome.contextMenus.create({
       id: MENU_ID,
@@ -170,7 +169,10 @@ async function watchRecording(settings) {
 }
 
 async function setRecording(recording) {
-  await chrome.storage.session.set({ recording });
+  // Content scripts draw the microphone button from this value. It lives in local storage
+  // because Firefox does not share session storage with content scripts, and that also keeps
+  // the reported tab address in session storage away from web pages' content scripts.
+  await chrome.storage.local.set({ recording });
   await chrome.action.setBadgeBackgroundColor({ color: "#d93025" });
   await chrome.action.setBadgeText({ text: recording ? "REC" : "" });
   chrome.contextMenus.update(MENU_ID, {
@@ -253,4 +255,4 @@ chrome.permissions.onAdded.addListener(() => void syncMicButton());
 chrome.permissions.onRemoved.addListener(() => void syncMicButton());
 
 // The end-to-end test drives the worker through these functions.
-globalThis.typewhisper = { toggleDictation, queueContextReport };
+globalThis.typewhisper = { toggleDictation, queueContextReport, isToggling: () => toggleInFlight !== null };

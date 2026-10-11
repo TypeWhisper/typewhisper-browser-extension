@@ -89,7 +89,12 @@ showMicButtonInput.addEventListener("change", async () => {
 
 document.getElementById("editShortcut").addEventListener("click", (event) => {
   event.preventDefault();
-  void chrome.tabs.create({ url: "chrome://extensions/shortcuts" });
+  // Firefox cannot open its add-on pages by URL but offers its own call.
+  if (chrome.commands.openShortcutSettings) {
+    void chrome.commands.openShortcutSettings();
+  } else {
+    void chrome.tabs.create({ url: "chrome://extensions/shortcuts" });
+  }
 });
 
 void load();

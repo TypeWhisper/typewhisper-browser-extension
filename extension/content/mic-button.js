@@ -17,40 +17,51 @@
   const host = document.createElement("typewhisper-mic");
   host.style.cssText = "all: initial; position: fixed; z-index: 2147483647; display: none;";
   const shadow = host.attachShadow({ mode: "closed" });
-  shadow.innerHTML = `
-    <style>
-      button {
-        all: initial;
-        box-sizing: border-box;
-        width: ${BUTTON_SIZE}px;
-        height: ${BUTTON_SIZE}px;
-        border-radius: 50%;
-        display: grid;
-        place-items: center;
-        cursor: pointer;
-        background: #ffffff;
-        color: #3c4043;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-        transition: background 120ms ease, color 120ms ease;
-      }
-      button:hover { background: #f1f3f4; }
-      button:focus-visible { outline: 2px solid #1a73e8; outline-offset: 2px; }
-      button[data-state="recording"] { background: #d93025; color: #ffffff; }
-      button[data-state="busy"] { opacity: 0.6; cursor: progress; }
-      button[data-state="error"] { background: #f9ab00; color: #202124; }
-      svg { width: 14px; height: 14px; display: block; }
-      @media (prefers-color-scheme: dark) {
-        button { background: #3c4043; color: #e8eaed; }
-        button:hover { background: #5f6368; }
-      }
-      @media (prefers-reduced-motion: reduce) { button { transition: none; } }
-    </style>
-    <button type="button">
-      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-        <path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-2.08A7 7 0 0 0 19 12h-2Z"/>
-      </svg>
-    </button>`;
-  const button = shadow.querySelector("button");
+  const SVG_NS = "http://www.w3.org/2000/svg";
+
+  const style = document.createElement("style");
+  style.textContent = `
+    button {
+      all: initial;
+      box-sizing: border-box;
+      width: ${BUTTON_SIZE}px;
+      height: ${BUTTON_SIZE}px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      background: #ffffff;
+      color: #3c4043;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+      transition: background 120ms ease, color 120ms ease;
+    }
+    button:hover { background: #f1f3f4; }
+    button:focus-visible { outline: 2px solid #1a73e8; outline-offset: 2px; }
+    button[data-state="recording"] { background: #d93025; color: #ffffff; }
+    button[data-state="busy"] { opacity: 0.6; cursor: progress; }
+    button[data-state="error"] { background: #f9ab00; color: #202124; }
+    svg { width: 14px; height: 14px; display: block; }
+    @media (prefers-color-scheme: dark) {
+      button { background: #3c4043; color: #e8eaed; }
+      button:hover { background: #5f6368; }
+    }
+    @media (prefers-reduced-motion: reduce) { button { transition: none; } }`;
+
+  const icon = document.createElementNS(SVG_NS, "svg");
+  icon.setAttribute("viewBox", "0 0 24 24");
+  icon.setAttribute("fill", "currentColor");
+  icon.setAttribute("aria-hidden", "true");
+  const iconPath = document.createElementNS(SVG_NS, "path");
+  iconPath.setAttribute(
+    "d",
+    "M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-2.08A7 7 0 0 0 19 12h-2Z",
+  );
+  icon.append(iconPath);
+
+  const button = document.createElement("button");
+  button.type = "button";
+  button.append(icon);
+  shadow.append(style, button);
 
   function isEditable(element) {
     if (!(element instanceof HTMLElement)) return false;
@@ -161,13 +172,13 @@
     errorTimer = setTimeout(() => render(), 4000);
   }
 
-  chrome.storage.session.get("recording").then(({ recording: value }) => {
+  chrome.storage.local.get("recording").then(({ recording: value }) => {
     recording = Boolean(value);
     render();
   }).catch(() => {});
 
   chrome.storage.onChanged.addListener((changes, area) => {
-    if (area === "session" && changes.recording) {
+    if (area === "local" && changes.recording) {
       recording = Boolean(changes.recording.newValue);
       render();
       if (!recording && !isEditable(document.activeElement)) hide();

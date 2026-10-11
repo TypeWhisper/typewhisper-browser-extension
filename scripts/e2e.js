@@ -110,11 +110,11 @@ try {
 
   await step("reports the active tab with token and extension origin", async () => {
     await worker.evaluate(() => globalThis.typewhisper.queueContextReport());
+    // While the page loads, Chrome reports the address as its title; the real title follows.
     const report = await waitFor(
-      () => contextReports().find((r) => r.body.focused && r.body.url === page.url),
-      "a focused context report",
+      () => contextReports().find((r) => r.body.focused && r.body.url === page.url && r.body.title === "E2E Docs"),
+      "a focused context report with the page title",
     );
-    assert.equal(report.body.title, "E2E Docs");
     assert.match(report.body.client_id, /^[0-9a-f-]{36}$/);
     assert.equal(report.headers.authorization, `Bearer ${TOKEN}`);
     assert.match(report.headers.origin ?? "", /^chrome-extension:\/\//);
@@ -180,6 +180,10 @@ try {
     assert.equal(api.requests.filter((r) => r.url === "/v1/dictation/start").length, startsBefore + 1);
     assert.equal(await tab.evaluate(() => document.activeElement?.id), "field");
 
+    // The button ignores clicks until the start request has answered, so a double click
+    // cannot start two dictations.
+    await waitFor(async () => !(await worker.evaluate(() => globalThis.typewhisper.isToggling())), "the start to finish");
+    await new Promise((resolve) => setTimeout(resolve, 200));
     await tab.mouse.click(position.x + 12, position.y + 12);
     await waitFor(() => !api.isRecording(), "the dictation to stop");
   });

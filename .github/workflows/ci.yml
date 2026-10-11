@@ -24,5 +24,6 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm test
+      - run: npm run lint:firefox
       - run: npx puppeteer browsers install chrome
       - run: npm run e2e

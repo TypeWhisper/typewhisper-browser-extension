@@ -1,0 +1,14 @@
+{
+  "name": "typewhisper-browser-extension",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "e2e": "node scripts/e2e.js",
+    "package": "node scripts/package.js"
+  },
+  "devDependencies": {
+    "puppeteer": "^25.13.0"
+  }
+}

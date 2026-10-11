@@ -87,6 +87,8 @@ const browser = await puppeteer.launch({
   headless: process.env.HEADFUL ? false : true,
   pipe: true,
   enableExtensions: [extensionPath],
+  // GitHub's Ubuntu runners do not allow Chrome's user-namespace sandbox.
+  args: process.env.CI ? ["--no-sandbox"] : [],
 });
 
 try {

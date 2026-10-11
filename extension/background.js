@@ -6,6 +6,7 @@ import {
   stopDictation,
 } from "./api.js";
 import { buildReport, shouldSend } from "./context.js";
+import { ALL_SITES } from "./mic-setting.js";
 import { getClientId, getSettings, setConnectionStatus } from "./settings.js";
 
 const REFRESH_ALARM = "refresh-context";
@@ -206,7 +207,7 @@ function errorMessage(error) {
 
 async function syncMicButton() {
   const { showMicButton } = await getSettings();
-  const granted = await chrome.permissions.contains({ origins: ["<all_urls>"] });
+  const granted = await chrome.permissions.contains(ALL_SITES);
   const registered = await chrome.scripting.getRegisteredContentScripts({ ids: [MIC_SCRIPT_ID] });
   if (showMicButton && granted) {
     if (registered.length === 0) {
@@ -247,6 +248,7 @@ chrome.storage.onChanged.addListener((changes, area) => {
   }
 });
 
+// The popup closes while Chrome asks for access, so the button is registered here.
 chrome.permissions.onAdded.addListener(() => void syncMicButton());
 chrome.permissions.onRemoved.addListener(() => void syncMicButton());
 

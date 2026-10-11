@@ -1,4 +1,5 @@
 import { APIError, getDictationStatus, getStatus } from "../api.js";
+import { enableMicButton, reconcileMicButton } from "../mic-setting.js";
 import { getSettings, saveSettings, setConnectionStatus } from "../settings.js";
 
 const message = (key, substitutions) => chrome.i18n.getMessage(key, substitutions);
@@ -53,8 +54,7 @@ async function load() {
   tokenInput.value = settings.token;
   portInput.value = String(settings.port);
   reportContextInput.checked = settings.reportContext;
-  const granted = await chrome.permissions.contains({ origins: ["<all_urls>"] });
-  showMicButtonInput.checked = settings.showMicButton && granted;
+  showMicButtonInput.checked = await reconcileMicButton(chrome);
 
   const commands = await chrome.commands.getAll();
   const shortcut = commands.find((command) => command.name === "toggle-dictation")?.shortcut;
@@ -84,10 +84,7 @@ showMicButtonInput.addEventListener("change", async () => {
     await saveSettings({ showMicButton: false });
     return;
   }
-  // The button needs access to every page; Chrome asks for it only on request.
-  const granted = await chrome.permissions.request({ origins: ["<all_urls>"] });
-  showMicButtonInput.checked = granted;
-  await saveSettings({ showMicButton: granted });
+  showMicButtonInput.checked = await enableMicButton(chrome);
 });
 
 document.getElementById("editShortcut").addEventListener("click", (event) => {

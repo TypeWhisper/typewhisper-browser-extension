@@ -202,6 +202,24 @@ try {
     await worker.evaluate((token) => chrome.storage.local.set({ token }), TOKEN);
   });
 
+  await step("popup shows the connection and turns off a mic wish without access", async () => {
+    await worker.evaluate(() => chrome.storage.local.set({ showMicButton: true }));
+    const popup = await browser.newPage();
+    const extensionId = new URL(workerTarget.url()).host;
+    const errors = [];
+    popup.on("pageerror", (error) => errors.push(error.message));
+    await popup.goto(`chrome-extension://${extensionId}/popup/popup.html`);
+    await waitFor(
+      () => popup.evaluate(() => document.getElementById("status").dataset.state === "connected"),
+      "the popup to connect",
+    );
+    assert.equal(await popup.evaluate(() => document.getElementById("showMicButton").checked), false);
+    const { showMicButton } = await worker.evaluate(() => chrome.storage.local.get("showMicButton"));
+    assert.equal(showMicButton, false);
+    assert.deepEqual(errors, []);
+    await popup.close();
+  });
+
   await step("withdraws the website when sharing is turned off", async () => {
     await worker.evaluate(() => chrome.storage.local.set({ reportContext: false }));
     await waitFor(() => contextReports().at(-1)?.body.focused === false, "a cleared report");

@@ -22,7 +22,10 @@ TypeWhisper inserts the dictated text into the focused field, as it does with it
 
 ## Install
 
-Store listings follow. Until then, build the packages and load them yourself:
+- **Chrome:** install [TypeWhisper from the Chrome Web Store](https://chromewebstore.google.com/detail/typewhisper/gamnkdngnfamiajnbeglodoaoaifbheh).
+- **Firefox:** the add-on listing follows. Until then, build the package and load it yourself (see below).
+
+To build the packages from source:
 
 ```bash
 npm ci

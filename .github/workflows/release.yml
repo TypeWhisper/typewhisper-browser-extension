@@ -1,0 +1,122 @@
+name: Release
+
+# Runs when CI passes on main. If the version in extension/manifest.json has no
+# GitHub release yet, it publishes one with both store packages and submits them
+# to Firefox Add-ons and the Chrome Web Store. Starting it by hand submits the
+# current version to the stores again, for example after a failed submission.
+# Each store needs a repository variable and a secret; without them it is skipped:
+#   Firefox: variable AMO_API_KEY (JWT issuer), secret AMO_API_SECRET (JWT secret)
+#   Chrome:  variable CHROME_PUBLISHER_ID, secret CHROME_SERVICE_ACCOUNT_KEY (JSON key)
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release
+
+jobs:
+  release:
+    if: >-
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push' &&
+       github.event.workflow_run.head_repository.full_name == github.repository)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+    outputs:
+      sha: ${{ env.SHA }}
+      version: ${{ steps.version.outputs.version }}
+      submit: ${{ steps.release.outputs.submit }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ env.SHA }}
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - id: version
+        run: echo "version=$(jq -r .version extension/manifest.json)" >> "$GITHUB_OUTPUT"
+      - id: release
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          if gh release view "v$VERSION" > /dev/null 2>&1; then
+            echo "v$VERSION already has a GitHub release."
+            if [ "$GITHUB_EVENT_NAME" != workflow_dispatch ]; then exit 0; fi
+            npm run build
+          else
+            npm run build
+            node scripts/release-notes.js > "$RUNNER_TEMP/release-notes.md"
+            gh release create "v$VERSION" dist/*.zip --target "$SHA" --title "$VERSION" --notes-file "$RUNNER_TEMP/release-notes.md"
+          fi
+          echo "submit=true" >> "$GITHUB_OUTPUT"
+      - if: steps.release.outputs.submit == 'true'
+        uses: actions/upload-artifact@v7
+        with:
+          name: packages
+          path: dist/*.zip
+          if-no-files-found: error
+
+  firefox:
+    needs: release
+    if: needs.release.outputs.submit == 'true' && vars.AMO_API_KEY != ''
+    runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ needs.release.outputs.version }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.release.outputs.sha }}
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+        env:
+          PUPPETEER_SKIP_DOWNLOAD: "true"
+      - uses: actions/download-artifact@v8
+        with:
+          name: packages
+          path: dist
+      - run: unzip -q "dist/typewhisper-firefox-$VERSION.zip" -d dist/firefox
+      - run: node scripts/release-notes.js --amo > "$RUNNER_TEMP/amo-metadata.json"
+      # Submits the version for review and returns; Firefox Add-ons publishes it once approved.
+      - run: npx web-ext sign --source-dir dist/firefox --channel listed --amo-metadata "$RUNNER_TEMP/amo-metadata.json" --approval-timeout 0
+        env:
+          WEB_EXT_API_KEY: ${{ vars.AMO_API_KEY }}
+          WEB_EXT_API_SECRET: ${{ secrets.AMO_API_SECRET }}
+
+  chrome:
+    needs: release
+    if: needs.release.outputs.submit == 'true' && vars.CHROME_PUBLISHER_ID != ''
+    runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ needs.release.outputs.version }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.release.outputs.sha }}
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - uses: actions/download-artifact@v8
+        with:
+          name: packages
+          path: dist
+      # Submits the version for review; the Chrome Web Store publishes it once approved.
+      - run: node scripts/publish-chrome.js "dist/typewhisper-chrome-$VERSION.zip"
+        env:
+          CHROME_PUBLISHER_ID: ${{ vars.CHROME_PUBLISHER_ID }}
+          CHROME_SERVICE_ACCOUNT_KEY: ${{ secrets.CHROME_SERVICE_ACCOUNT_KEY }}

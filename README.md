@@ -66,6 +66,8 @@ npm run e2e:layout
 - `npm run e2e` loads the extension into Chrome for Testing and drives it against a mock of the TypeWhisper API. Set `HEADFUL=1` to watch the browser.
 - `npm run e2e:layout` checks where the microphone button sits in different text fields, in Chrome and Firefox, and saves screenshots to `test-results/mic-button/`. CI keeps them as a build artifact. Set `BROWSERS=chrome` or `BROWSERS=firefox` to check one browser, and `FIREFOX_PATH` to use an installed Firefox.
 
+[CHANGELOG.md](CHANGELOG.md) lists the changes in each version. [RELEASING.md](RELEASING.md) explains how a new version reaches the stores.
+
 ## License
 
 [GPL-3.0-or-later](LICENSE)

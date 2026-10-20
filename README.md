@@ -55,13 +55,16 @@ npm ci
 npm test
 npm run lint:firefox
 npx puppeteer browsers install chrome
+npx puppeteer browsers install firefox
 npm run e2e
+npm run e2e:layout
 ```
 
 - `npm run build` writes `dist/chrome` and `dist/firefox` plus a store ZIP for each. The source in `extension/` is the Chrome package; the Firefox manifest is derived from it.
 - `npm test` runs the unit tests.
 - `npm run lint:firefox` checks the Firefox package with Mozilla's add-on linter.
 - `npm run e2e` loads the extension into Chrome for Testing and drives it against a mock of the TypeWhisper API. Set `HEADFUL=1` to watch the browser.
+- `npm run e2e:layout` checks where the microphone button sits in different text fields, in Chrome and Firefox, and saves screenshots to `test-results/mic-button/`. CI keeps them as a build artifact. Set `BROWSERS=chrome` or `BROWSERS=firefox` to check one browser, and `FIREFOX_PATH` to use an installed Firefox.
 
 ## License
 

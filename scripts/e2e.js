@@ -58,6 +58,7 @@ async function startPageServer() {
     response.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
     response.end(`<!doctype html><title>E2E Docs</title>
       <textarea id="field" style="width:420px;height:120px;margin:40px"></textarea>
+      <input id="search" type="search" style="width:300px;height:40px;margin:0 40px 40px">
       <input id="secret" type="password" style="width:300px">`);
   });
   const port = await listen(server);
@@ -186,6 +187,24 @@ try {
     await new Promise((resolve) => setTimeout(resolve, 200));
     await tab.mouse.click(position.x + 12, position.y + 12);
     await waitFor(() => !api.isRecording(), "the dictation to stop");
+  });
+
+  await step("centers the microphone button in single-line fields", async () => {
+    await tab.focus("#search");
+    const offset = await waitFor(
+      () =>
+        tab.evaluate(() => {
+          const host = document.querySelector("typewhisper-mic");
+          const field = document.getElementById("search").getBoundingClientRect();
+          const button = host.getBoundingClientRect();
+          const middle = button.top + button.height / 2;
+          // Waits until the button has moved from the textarea to this field.
+          if (host.style.display !== "block" || middle < field.top || middle > field.bottom) return null;
+          return { value: middle - (field.top + field.height / 2) };
+        }),
+      "the microphone button in the search field",
+    );
+    assert.ok(Math.abs(offset.value) <= 1, `button is ${offset.value} px off the middle`);
   });
 
   await step("hides the microphone button in password fields", async () => {

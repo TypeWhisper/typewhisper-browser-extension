@@ -8,6 +8,8 @@
   const TEXT_INPUT_TYPES = new Set(["", "text", "search", "email", "url", "tel"]);
   const BUTTON_SIZE = 24;
   const EDGE_INSET = 6;
+  // Fields up to this height hold one line of text, so the button is centered.
+  const MAX_SINGLE_LINE_HEIGHT = 48;
 
   let field = null;
   let recording = false;
@@ -95,9 +97,12 @@
       host.style.display = "none";
       return;
     }
-    const top = Math.min(rect.top + EDGE_INSET, rect.bottom - BUTTON_SIZE - 2);
+    // Single-line fields center the button, even when it is taller than the field.
+    // Taller fields keep it in the top right corner, next to the first line.
+    const singleLine = field instanceof HTMLInputElement || rect.height <= MAX_SINGLE_LINE_HEIGHT;
+    const top = singleLine ? rect.top + (rect.height - BUTTON_SIZE) / 2 : rect.top + EDGE_INSET;
     host.style.left = `${Math.round(rect.right - BUTTON_SIZE - EDGE_INSET)}px`;
-    host.style.top = `${Math.round(Math.max(rect.top + 2, top))}px`;
+    host.style.top = `${Math.round(top)}px`;
     host.style.display = "block";
   }
 

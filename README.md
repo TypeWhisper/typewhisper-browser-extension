@@ -15,7 +15,7 @@ TypeWhisper inserts the dictated text into the focused field, as it does with it
 
 ## Requirements
 
-- TypeWhisper for Mac with the local API enabled. Windows support follows.
+- TypeWhisper for Mac, or TypeWhisper for Windows 1.1 or later, with the local API enabled
 - Website workflows need a TypeWhisper version with browser context support. The popup tells you when yours is too old.
 - Google Chrome 120 or later, or another Chromium browser that runs Manifest V3 extensions
 - Firefox 140 or later on the desktop
@@ -37,8 +37,10 @@ npm run build
 
 Then connect it to TypeWhisper:
 
-1. In TypeWhisper, turn on the API server under **Settings › Advanced** and click **Copy API Token**.
-2. Open the extension's popup, paste the token, check the port (default `8978`), and click **Save**. The popup shows **Connected to TypeWhisper** when the connection works.
+1. In TypeWhisper:
+   - **Mac:** turn on the API server under **Settings › Advanced** and click **Copy API Token**.
+   - **Windows:** open **Settings › Advanced** and turn on **Enable HTTP API** under **API server**. A token is only needed when **Require API token** is on; then click **Copy API token**.
+2. Open the extension's popup, paste the token if you copied one, check the port (default `8978`), and click **Save**. The popup shows **Connected to TypeWhisper** when the connection works.
 
 ## Privacy
 

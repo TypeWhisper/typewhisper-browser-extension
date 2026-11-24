@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Safari package for TypeWhisper for Mac. In Safari, the extension gets the API port and token from TypeWhisper, so the popup hides the token field.
+
 ## 0.1.1 (2026-10-20)
 
 - The microphone button now sits in the middle of single-line text fields. In search boxes with a frame around the input, it used to sit too low, sometimes past the bottom edge.

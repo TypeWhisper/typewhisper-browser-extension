@@ -9,9 +9,35 @@ export const DEFAULT_SETTINGS = {
   showMicButton: false,
 };
 
+/**
+ * The settings, with the API port and token from TypeWhisper when it hands them over.
+ * `fromApp` tells the popup that nobody has to enter them.
+ */
 export async function getSettings() {
   const stored = await chrome.storage.local.get(Object.keys(DEFAULT_SETTINGS));
-  return { ...DEFAULT_SETTINGS, ...stored };
+  const settings = { ...DEFAULT_SETTINGS, ...stored, fromApp: false };
+  const connection = await getAppConnection();
+  return connection ? { ...settings, ...connection, fromApp: true } : settings;
+}
+
+/**
+ * In Safari the extension ships inside TypeWhisper for Mac, whose extension handler returns
+ * the port and token of the running API server. Chrome and Firefox packages do not request
+ * native messaging, so their runtime has no `sendNativeMessage` and this returns null.
+ * It also returns null while TypeWhisper is not running or its API server is off.
+ */
+export async function getAppConnection(runtime = globalThis.browser?.runtime ?? chrome.runtime) {
+  if (typeof runtime?.sendNativeMessage !== "function") return null;
+  let reply;
+  try {
+    reply = await runtime.sendNativeMessage("com.typewhisper.mac", { type: "connection" });
+  } catch {
+    return null;
+  }
+  const port = reply?.port;
+  const token = reply?.token;
+  if (!Number.isInteger(port) || port <= 0 || port >= 65536 || typeof token !== "string") return null;
+  return { port, token };
 }
 
 export function saveSettings(changes) {

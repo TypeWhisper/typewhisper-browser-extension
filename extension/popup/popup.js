@@ -53,6 +53,9 @@ async function load() {
   const settings = await getSettings();
   tokenInput.value = settings.token;
   portInput.value = String(settings.port);
+  // Safari gets the connection from TypeWhisper and lists shortcuts in its own settings.
+  document.getElementById("connection").hidden = settings.fromApp;
+  document.getElementById("editShortcut").hidden = settings.fromApp;
   reportContextInput.checked = settings.reportContext;
   showMicButtonInput.checked = await reconcileMicButton(chrome);
 

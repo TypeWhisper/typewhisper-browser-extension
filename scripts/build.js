@@ -1,5 +1,6 @@
-// Builds the Chrome and Firefox packages from extension/ into dist/.
-// `node scripts/build.js` writes dist/chrome, dist/firefox and a store ZIP for each.
+// Builds the Chrome, Firefox and Safari packages from extension/ into dist/.
+// `node scripts/build.js` writes dist/chrome, dist/firefox and a store ZIP for each, and
+// dist/safari, which TypeWhisper for Mac embeds as its Safari web extension.
 
 import { execFileSync } from "node:child_process";
 import { cpSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
@@ -36,13 +37,71 @@ export function firefoxManifest(manifest) {
   };
 }
 
-function writePackage(target, manifest) {
+/**
+ * Safari runs the background as a classic service worker, without module support, and
+ * ships inside TypeWhisper for Mac, which hands over the API port and token through
+ * native messaging.
+ */
+export function safariManifest(manifest) {
+  const { minimum_chrome_version: _chromeOnly, background, permissions, ...rest } = manifest;
+  return {
+    ...rest,
+    permissions: [...permissions, "nativeMessaging"],
+    background: { service_worker: background.service_worker },
+  };
+}
+
+/**
+ * Joins an ES module and the modules it imports from relative paths into one classic
+ * script, dependencies first. It handles the import and export forms this extension uses:
+ * named imports and exported declarations.
+ */
+export function bundleModules(entry) {
+  const ordered = [];
+  const visited = new Set();
+  const visit = (file) => {
+    if (visited.has(file)) return;
+    visited.add(file);
+    const code = readFileSync(file, "utf8");
+    for (const match of code.matchAll(/^import\s+\{[^}]*\}\s+from\s+"(\.[^"]+)";/gm)) {
+      visit(path.resolve(path.dirname(file), match[1]));
+    }
+    ordered.push({ file, code });
+  };
+  visit(entry);
+  return ordered
+    .map(({ file, code }) => {
+      const body = code
+        .replace(/^import\s+\{[^}]*\}\s+from\s+"[^"]+";\n/gm, "")
+        .replace(/^export\s+(?=(async\s+)?(function|const|let|class)\b)/gm, "");
+      if (/^\s*(import|export)\b/m.test(body)) {
+        throw new Error(`${path.relative(source, file)} uses an import or export the bundler does not handle`);
+      }
+      return `// ${path.relative(source, file)}\n${body}`;
+    })
+    .join("\n");
+}
+
+function writeDirectory(target, manifest) {
   const directory = path.join(dist, target);
   cpSync(source, directory, { recursive: true });
   writeFileSync(path.join(directory, "manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`);
+  return directory;
+}
+
+function writePackage(target, manifest) {
+  const directory = writeDirectory(target, manifest);
   const archive = path.join(dist, `typewhisper-${target}-${manifest.version}.zip`);
   execFileSync("zip", ["-q", "-r", "-X", archive, "."], { cwd: directory });
   return archive;
+}
+
+function writeSafari(manifest) {
+  const safari = safariManifest(manifest);
+  const directory = writeDirectory("safari", safari);
+  const background = path.join(source, manifest.background.service_worker);
+  writeFileSync(path.join(directory, safari.background.service_worker), bundleModules(background));
+  return directory;
 }
 
 export function build() {
@@ -52,6 +111,7 @@ export function build() {
   return {
     chrome: writePackage("chrome", manifest),
     firefox: writePackage("firefox", firefoxManifest(manifest)),
+    safari: writeSafari(manifest),
   };
 }
 

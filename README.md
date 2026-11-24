@@ -1,6 +1,6 @@
 # TypeWhisper Browser Extension
 
-Dictate into any text field in Chrome or Firefox with [TypeWhisper](https://www.typewhisper.com), and let website workflows match the page you are on. The extension talks only to TypeWhisper's local API on `127.0.0.1`.
+Dictate into any text field in Chrome, Firefox or Safari with [TypeWhisper](https://www.typewhisper.com), and let website workflows match the page you are on. The extension talks only to TypeWhisper's local API on `127.0.0.1`.
 
 ## Features
 
@@ -19,11 +19,13 @@ TypeWhisper inserts the dictated text into the focused field, as it does with it
 - Website workflows need a TypeWhisper version with browser context support. The popup tells you when yours is too old.
 - Google Chrome 120 or later, or another Chromium browser that runs Manifest V3 extensions
 - Firefox 140 or later on the desktop
+- Safari: the extension comes with TypeWhisper for Mac (version with Safari support), so there is nothing to install separately
 
 ## Install
 
 - **Chrome:** install [TypeWhisper from the Chrome Web Store](https://chromewebstore.google.com/detail/typewhisper/gamnkdngnfamiajnbeglodoaoaifbheh).
 - **Firefox:** install [TypeWhisper from Firefox Add-ons](https://addons.mozilla.org/firefox/addon/typewhisper/).
+- **Safari:** turn on **TypeWhisper** under **Safari › Settings › Extensions**. TypeWhisper for Mac hands the port and API token to the extension, so you only need its API server turned on. The shortcut is listed in the same settings pane.
 
 To build the packages from source:
 
@@ -62,7 +64,7 @@ npm run e2e
 npm run e2e:layout
 ```
 
-- `npm run build` writes `dist/chrome` and `dist/firefox` plus a store ZIP for each. The source in `extension/` is the Chrome package; the Firefox manifest is derived from it.
+- `npm run build` writes `dist/chrome` and `dist/firefox` plus a store ZIP for each, and `dist/safari`, which TypeWhisper for Mac embeds. The Safari package bundles the background modules into one classic script, because Safari's service worker does not load modules, and asks TypeWhisper for the API port and token through native messaging. The source in `extension/` is the Chrome package; the Firefox manifest is derived from it.
 - `npm test` runs the unit tests.
 - `npm run lint:firefox` checks the Firefox package with Mozilla's add-on linter.
 - `npm run e2e` loads the extension into Chrome for Testing and drives it against a mock of the TypeWhisper API. Set `HEADFUL=1` to watch the browser.

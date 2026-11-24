@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { getAppConnection } from "../extension/settings.js";
+import { getAppConnection, hasAppMessaging } from "../extension/settings.js";
 
 test("without native messaging there is no app connection", async () => {
   assert.equal(await getAppConnection({}), null);
@@ -26,4 +26,11 @@ test("a failed or incomplete reply falls back to the stored settings", async () 
   assert.equal(await getAppConnection(replying({ port: "8978", token: "secret" })), null);
   assert.equal(await getAppConnection(replying({ port: 0, token: "secret" })), null);
   assert.equal(await getAppConnection(replying({ port: 8978 })), null);
+});
+
+test("the Safari package is recognized while TypeWhisper is not running", async () => {
+  const runtime = { sendNativeMessage: async () => ({}) };
+  assert.equal(hasAppMessaging(runtime), true);
+  assert.equal(await getAppConnection(runtime), null);
+  assert.equal(hasAppMessaging({}), false);
 });

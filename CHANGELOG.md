@@ -3,6 +3,7 @@
 ## Unreleased
 
 - Safari package for TypeWhisper for Mac. In Safari, the extension gets the API port and token from TypeWhisper, so the popup hides the token field.
+- Turning off the microphone button now also keeps it away in pages that were already open. Before, it came back when you focused another text field there.
 
 ## 0.1.1 (2026-10-20)
 

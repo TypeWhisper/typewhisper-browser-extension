@@ -215,6 +215,15 @@ try {
     );
   });
 
+  await step("keeps the microphone button away after the setting is turned off", async () => {
+    await worker.evaluate(() => chrome.storage.local.set({ showMicButton: false }));
+    await waitFor(() => tab.evaluate(() => !document.querySelector("typewhisper-mic")), "the button to go");
+    await tab.focus("#field");
+    // Give the focus handler a moment; the open page keeps its content script.
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    assert.equal(await tab.evaluate(() => Boolean(document.querySelector("typewhisper-mic"))), false);
+  });
+
   await step("reports a rejected token", async () => {
     await worker.evaluate(() => chrome.storage.local.set({ token: "wrong" }));
     const result = await worker.evaluate(() => globalThis.typewhisper.toggleDictation());
